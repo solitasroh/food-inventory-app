@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/services/notification_service.dart';
 import '../../../../main.dart';
 import '../../domain/entities/food_item.dart';
 
@@ -15,7 +16,12 @@ class InventoryList extends _$InventoryList {
 
   Future<List<FoodItem>> _loadItems() async {
     final repository = ref.read(foodItemRepositoryProvider);
-    return repository.getAllItems();
+    final items = await repository.getAllItems();
+
+    // 알림 재스케줄링
+    await NotificationService().scheduleExpirationNotifications(items);
+
+    return items;
   }
 
   Future<void> loadItems() async {

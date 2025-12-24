@@ -59,6 +59,37 @@
 
 ## 완료된 작업 (2024-12-24)
 
+### 유통기한 알림 기능
+- [x] **flutter_local_notifications 패키지 통합**
+  - Android/iOS 로컬 푸시 알림 지원
+  - 타임존 기반 정확한 스케줄링
+- [x] **알림 설정 모델 구현** (`NotificationSettings`)
+  - 알림 활성화/비활성화
+  - 사전 알림 기간 설정 (1~14일)
+  - 알림 시간 설정
+  - 만료 식품 알림 옵션
+  - SharedPreferences 저장
+- [x] **알림 서비스 구현** (`NotificationService`)
+  - 싱글톤 패턴
+  - 매일 요약 알림 스케줄링
+  - 개별 식품 만료일 알림 스케줄링
+  - 알림 권한 요청
+  - 테스트 알림 기능
+- [x] **설정 페이지 UI** (`SettingsPage`)
+  - Riverpod 상태 관리
+  - 알림 토글 스위치
+  - 사전 알림 기간 선택 다이얼로그
+  - 시간 선택 피커
+  - 테스트 알림 버튼
+  - 앱 정보 섹션
+- [x] **앱 시작 시 알림 초기화**
+  - main.dart에서 NotificationService 초기화
+  - 식품 목록 변경 시 알림 재스케줄링
+- [x] **Android 알림 권한 설정**
+  - POST_NOTIFICATIONS (Android 13+)
+  - SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM
+  - RECEIVE_BOOT_COMPLETED
+
 ### 유통기한 자동 추천 시스템
 - [x] **다중 API 폴백 전략 설계** - I2570 → 푸드QR → OpenFoodFacts 순차 조회
 - [x] **신선식품 보관기간 데이터베이스 구축** (70+ 식품 카테고리)
@@ -96,17 +127,16 @@
 
 ### 우선순위 높음
 - [x] ~~**영구 저장소 구현** - sqflite로 메모리 저장소 교체~~ ✅ 완료
+- [x] ~~**유통기한 알림** - 로컬 푸시 알림 (flutter_local_notifications)~~ ✅ 완료
 - [ ] **쇼핑 리스트 기능** - 부족한 식재료 자동 추가, 수동 추가
-- [ ] **유통기한 알림** - 로컬 푸시 알림 (flutter_local_notifications)
 - [ ] **API 키 설정** - 공공데이터포털/푸드QR API 키 발급 및 설정
 
 ### 우선순위 중간
-- [ ] **설정 페이지 구현**
-  - 알림 설정 (D-day 기준일 설정)
-  - 테마 설정 (시스템/라이트/다크)
-  - API 키 설정
-  - 데이터 백업/복원
-  - 앱 정보
+- [ ] **설정 페이지 추가 기능**
+  - [x] 알림 설정 (D-day 기준일 설정) ✅ 완료
+  - [ ] 테마 설정 (시스템/라이트/다크)
+  - [ ] API 키 설정
+  - [ ] 데이터 백업/복원
 - [ ] **식재료 이미지 촬영** - 카메라/갤러리에서 이미지 추가
 - [ ] **카테고리 관리** - 사용자 정의 카테고리 추가/수정
 - [ ] **통계 대시보드** - 유통기한 임박 현황, 카테고리별 분포
@@ -162,6 +192,8 @@
 - `lib/core/services/food_safety_korea_service.dart` - 식품안전나라 API (I2570)
 - `lib/core/services/food_qr_service.dart` - 푸드QR API
 - `lib/core/services/product_lookup_service.dart` - 통합 제품 조회 서비스
+- `lib/core/services/notification_service.dart` - 알림 스케줄링 서비스
+- `lib/core/services/notification_settings.dart` - 알림 설정 모델
 
 ### DataSource
 - `lib/features/inventory/data/datasources/food_item_sqlite_datasource.dart` - SQLite DataSource

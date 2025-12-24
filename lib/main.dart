@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'core/database/database_helper.dart';
 import 'core/router/app_router.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/inventory/data/datasources/food_item_local_datasource.dart';
 import 'features/inventory/data/datasources/food_item_sqlite_datasource.dart';
@@ -17,9 +18,16 @@ Future<void> main() async {
   final dbHelper = DatabaseHelper();
   await dbHelper.database; // 데이터베이스 초기화 대기
 
+  // 알림 서비스 초기화
+  await NotificationService().initialize();
+
   // SQLite 기반 DataSource 사용
   final localDataSource = FoodItemSqliteDataSource(dbHelper: dbHelper);
   final repository = FoodItemRepositoryImpl(localDataSource);
+
+  // 앱 시작 시 알림 스케줄링
+  final items = await repository.getAllItems();
+  await NotificationService().scheduleExpirationNotifications(items);
 
   runApp(
     ProviderScope(

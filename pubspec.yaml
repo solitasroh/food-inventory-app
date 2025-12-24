@@ -64,6 +64,13 @@ dependencies:
   # HTTP
   http: ^1.2.2
 
+  # 알림
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
+
+  # 설정 저장
+  shared_preferences: ^2.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

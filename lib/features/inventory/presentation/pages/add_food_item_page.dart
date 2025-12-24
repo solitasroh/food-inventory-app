@@ -5,7 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/data/food_subcategory.dart';
 import '../../../../core/services/open_food_facts_service.dart';
+import '../../../../core/services/shelf_life_service.dart';
+import '../../../../core/services/product_lookup_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/enums.dart';
 import '../../domain/entities/food_item.dart';
@@ -38,13 +41,82 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
   String? _scannedBarcode;
   String? _productImageUrl;
 
+  // 새로운 상태 변수들
+  final ShelfLifeService _shelfLifeService = ShelfLifeService();
+  ShelfLifeRecommendation? _shelfLifeRecommendation;
+  bool _isExpirationAutoSet = false;
+  List<String> _nameSuggestions = [];
+  bool _showSuggestions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onNameChanged);
+  }
+
   @override
   void dispose() {
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     _quantityController.dispose();
     _priceController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _onNameChanged() {
+    final query = _nameController.text.trim();
+    if (query.isNotEmpty) {
+      setState(() {
+        _nameSuggestions = _shelfLifeService.getSuggestions(query, limit: 5);
+        _showSuggestions = _nameSuggestions.isNotEmpty;
+      });
+    } else {
+      setState(() {
+        _nameSuggestions = [];
+        _showSuggestions = false;
+      });
+    }
+  }
+
+  void _selectSuggestion(String suggestion) {
+    _nameController.text = suggestion;
+    _nameController.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.length),
+    );
+    setState(() {
+      _showSuggestions = false;
+    });
+    _updateShelfLifeRecommendation();
+  }
+
+  void _updateShelfLifeRecommendation() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() {
+        _shelfLifeRecommendation = null;
+        _isExpirationAutoSet = false;
+      });
+      return;
+    }
+
+    final recommendation = _shelfLifeService.recommend(
+      name: name,
+      location: _selectedLocation,
+      category: _selectedCategory,
+    );
+
+    setState(() {
+      _shelfLifeRecommendation = recommendation;
+    });
+
+    // 유통기한이 아직 설정되지 않았으면 자동 설정
+    if (_expirationDate == null && recommendation != null && recommendation.confidence >= 0.5) {
+      setState(() {
+        _expirationDate = recommendation.expirationDate;
+        _isExpirationAutoSet = true;
+      });
+    }
   }
 
   @override
@@ -73,7 +145,7 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
               _buildScannedProductCard(),
               SizedBox(height: 16.h),
             ],
-            _buildNameField(),
+            _buildNameFieldWithSuggestions(),
             SizedBox(height: 16.h),
             _buildCategoryField(),
             SizedBox(height: 16.h),
@@ -82,6 +154,10 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
             _buildQuantityAndUnitRow(),
             SizedBox(height: 16.h),
             _buildExpirationDateField(),
+            if (_shelfLifeRecommendation != null) ...[
+              SizedBox(height: 8.h),
+              _buildShelfLifeRecommendationCard(),
+            ],
             SizedBox(height: 16.h),
             _buildPurchaseDateField(),
             SizedBox(height: 16.h),
@@ -97,21 +173,71 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
     );
   }
 
-  Widget _buildNameField() {
-    return TextFormField(
-      controller: _nameController,
-      decoration: const InputDecoration(
-        labelText: '식재료 이름 *',
-        hintText: '예: 우유, 계란, 양파',
-        prefixIcon: Icon(Icons.restaurant),
-      ),
-      textInputAction: TextInputAction.next,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return '식재료 이름을 입력해주세요';
-        }
-        return null;
-      },
+  Widget _buildNameFieldWithSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: '식재료 이름 *',
+            hintText: '예: 우유, 계란, 양파',
+            prefixIcon: Icon(Icons.restaurant),
+          ),
+          textInputAction: TextInputAction.next,
+          onEditingComplete: () {
+            setState(() => _showSuggestions = false);
+            _updateShelfLifeRecommendation();
+            FocusScope.of(context).nextFocus();
+          },
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '식재료 이름을 입력해주세요';
+            }
+            return null;
+          },
+        ),
+        if (_showSuggestions && _nameSuggestions.isNotEmpty)
+          Container(
+            margin: EdgeInsets.only(top: 4.h),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(8.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _nameSuggestions.map((suggestion) {
+                return InkWell(
+                  onTap: () => _selectSuggestion(suggestion),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.search,
+                          size: 18.w,
+                          color: AppColors.grey500,
+                        ),
+                        SizedBox(width: 12.w),
+                        Text(
+                          suggestion,
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -131,6 +257,7 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
       onChanged: (value) {
         if (value != null) {
           setState(() => _selectedCategory = value);
+          _updateShelfLifeRecommendation();
         }
       },
       validator: (value) {
@@ -170,6 +297,7 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
             selected: {_selectedLocation},
             onSelectionChanged: (selected) {
               setState(() => _selectedLocation = selected.first);
+              _updateShelfLifeRecommendation();
             },
             style: ButtonStyle(
               visualDensity: VisualDensity.compact,
@@ -243,18 +371,142 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
           suffixIcon: _expirationDate != null
               ? IconButton(
                   icon: const Icon(Icons.clear),
-                  onPressed: () => setState(() => _expirationDate = null),
+                  onPressed: () {
+                    setState(() {
+                      _expirationDate = null;
+                      _isExpirationAutoSet = false;
+                    });
+                  },
                 )
               : null,
         ),
-        child: Text(
-          _expirationDate != null
-              ? DateFormat('yyyy년 MM월 dd일').format(_expirationDate!)
-              : '유통기한 선택 (선택사항)',
-          style: TextStyle(
-            color: _expirationDate != null ? null : AppColors.grey500,
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _expirationDate != null
+                    ? DateFormat('yyyy년 MM월 dd일').format(_expirationDate!)
+                    : '유통기한 선택 (선택사항)',
+                style: TextStyle(
+                  color: _expirationDate != null ? null : AppColors.grey500,
+                ),
+              ),
+            ),
+            if (_isExpirationAutoSet)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  '자동',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildShelfLifeRecommendationCard() {
+    final recommendation = _shelfLifeRecommendation!;
+    final confidenceColor = recommendation.confidence >= 0.7
+        ? AppColors.success
+        : recommendation.confidence >= 0.5
+            ? AppColors.warning
+            : AppColors.grey500;
+
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.lightbulb_outline,
+                size: 16.w,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                '보관기간 추천',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: confidenceColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  '신뢰도 ${(recommendation.confidence * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: confidenceColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            '${recommendation.days}일 (${recommendation.reason})',
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.grey700,
+            ),
+          ),
+          if (recommendation.matchedSubCategory != null) ...[
+            SizedBox(height: 4.h),
+            Text(
+              '매칭: ${recommendation.matchedSubCategory!.name}',
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: AppColors.grey500,
+              ),
+            ),
+          ],
+          if (!_isExpirationAutoSet && recommendation.confidence >= 0.5) ...[
+            SizedBox(height: 8.h),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _expirationDate = recommendation.expirationDate;
+                    _isExpirationAutoSet = true;
+                  });
+                },
+                icon: Icon(Icons.check, size: 16.w),
+                label: const Text('이 날짜로 설정'),
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  textStyle: TextStyle(fontSize: 12.sp),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -341,7 +593,10 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
     );
 
     if (picked != null) {
-      setState(() => _expirationDate = picked);
+      setState(() {
+        _expirationDate = picked;
+        _isExpirationAutoSet = false;
+      });
     }
   }
 
@@ -442,6 +697,9 @@ class _AddFoodItemPageState extends ConsumerState<AddFoodItemPage> {
           _nameController.text = result.displayName;
         }
       });
+
+      // 스캔된 제품으로 유통기한 추천 업데이트
+      _updateShelfLifeRecommendation();
 
       if (result.hasData) {
         ScaffoldMessenger.of(context).showSnackBar(

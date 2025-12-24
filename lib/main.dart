@@ -10,6 +10,8 @@ import 'features/inventory/data/datasources/food_item_local_datasource.dart';
 import 'features/inventory/data/datasources/food_item_sqlite_datasource.dart';
 import 'features/inventory/data/repositories/food_item_repository_impl.dart';
 import 'features/inventory/domain/repositories/food_item_repository.dart';
+import 'features/shopping_list/data/datasources/shopping_item_sqlite_datasource.dart';
+import 'features/shopping_list/presentation/providers/shopping_list_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +27,9 @@ Future<void> main() async {
   final localDataSource = FoodItemSqliteDataSource(dbHelper: dbHelper);
   final repository = FoodItemRepositoryImpl(localDataSource);
 
+  // 쇼핑리스트 DataSource 초기화
+  final shoppingDataSource = ShoppingItemSqliteDataSource(dbHelper: dbHelper);
+
   // 앱 시작 시 알림 스케줄링
   final items = await repository.getAllItems();
   await NotificationService().scheduleExpirationNotifications(items);
@@ -34,6 +39,7 @@ Future<void> main() async {
       overrides: [
         foodItemRepositoryProvider.overrideWithValue(repository),
         foodItemDataSourceProvider.overrideWithValue(localDataSource),
+        shoppingListDataSourceProvider.overrideWithValue(shoppingDataSource),
       ],
       child: const MainApp(),
     ),

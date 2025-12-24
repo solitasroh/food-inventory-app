@@ -7,12 +7,14 @@ import 'package:sqflite/sqflite.dart';
 /// 싱글톤 패턴으로 구현
 class DatabaseHelper {
   static const String _databaseName = 'food_inventory.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2; // 버전 업그레이드
 
   // 테이블 이름
   static const String tableFoodItems = 'food_items';
+  static const String tableShoppingItems = 'shopping_items';
+  static const String tablePurchaseHistory = 'purchase_history';
 
-  // 컬럼 이름
+  // food_items 컬럼 이름
   static const String columnId = 'id';
   static const String columnUid = 'uid';
   static const String columnName = 'name';
@@ -29,6 +31,18 @@ class DatabaseHelper {
   static const String columnNotes = 'notes';
   static const String columnCreatedAt = 'created_at';
   static const String columnUpdatedAt = 'updated_at';
+
+  // shopping_items 컬럼 이름
+  static const String columnPriority = 'priority';
+  static const String columnIsCompleted = 'is_completed';
+  static const String columnLinkedFoodItemId = 'linked_food_item_id';
+  static const String columnSuggestedBy = 'suggested_by';
+  static const String columnCompletedAt = 'completed_at';
+
+  // purchase_history 컬럼 이름
+  static const String columnItemName = 'item_name';
+  static const String columnPurchaseCount = 'purchase_count';
+  static const String columnLastPurchasedAt = 'last_purchased_at';
 
   // 싱글톤 인스턴스
   static DatabaseHelper? _instance;
@@ -63,6 +77,18 @@ class DatabaseHelper {
 
   /// 테이블 생성
   Future<void> _onCreate(Database db, int version) async {
+    // food_items 테이블 생성
+    await _createFoodItemsTable(db);
+
+    // shopping_items 테이블 생성
+    await _createShoppingItemsTable(db);
+
+    // purchase_history 테이블 생성
+    await _createPurchaseHistoryTable(db);
+  }
+
+  /// food_items 테이블 생성
+  Future<void> _createFoodItemsTable(Database db) async {
     await db.execute('''
       CREATE TABLE $tableFoodItems (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,27 +111,73 @@ class DatabaseHelper {
     ''');
 
     // 인덱스 생성 (검색 성능 향상)
+    await db.execute(
+        'CREATE INDEX idx_food_items_uid ON $tableFoodItems ($columnUid)');
+    await db.execute(
+        'CREATE INDEX idx_food_items_barcode ON $tableFoodItems ($columnBarcode)');
+    await db.execute(
+        'CREATE INDEX idx_food_items_category ON $tableFoodItems ($columnCategory)');
+    await db.execute(
+        'CREATE INDEX idx_food_items_location ON $tableFoodItems ($columnLocation)');
+    await db.execute(
+        'CREATE INDEX idx_food_items_expiration ON $tableFoodItems ($columnExpirationDate)');
+  }
+
+  /// shopping_items 테이블 생성
+  Future<void> _createShoppingItemsTable(Database db) async {
     await db.execute('''
-      CREATE INDEX idx_food_items_uid ON $tableFoodItems ($columnUid)
+      CREATE TABLE $tableShoppingItems (
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnUid TEXT NOT NULL UNIQUE,
+        $columnName TEXT NOT NULL,
+        $columnCategory TEXT NOT NULL,
+        $columnQuantity REAL NOT NULL,
+        $columnUnit TEXT NOT NULL,
+        $columnPriority TEXT NOT NULL DEFAULT 'medium',
+        $columnIsCompleted INTEGER NOT NULL DEFAULT 0,
+        $columnNotes TEXT,
+        $columnLinkedFoodItemId TEXT,
+        $columnSuggestedBy TEXT NOT NULL DEFAULT 'manual',
+        $columnCreatedAt TEXT NOT NULL,
+        $columnCompletedAt TEXT
+      )
     ''');
+
+    // 인덱스 생성
+    await db.execute(
+        'CREATE INDEX idx_shopping_items_uid ON $tableShoppingItems ($columnUid)');
+    await db.execute(
+        'CREATE INDEX idx_shopping_items_category ON $tableShoppingItems ($columnCategory)');
+    await db.execute(
+        'CREATE INDEX idx_shopping_items_completed ON $tableShoppingItems ($columnIsCompleted)');
+  }
+
+  /// purchase_history 테이블 생성 (자주 구매 품목 추적)
+  Future<void> _createPurchaseHistoryTable(Database db) async {
     await db.execute('''
-      CREATE INDEX idx_food_items_barcode ON $tableFoodItems ($columnBarcode)
+      CREATE TABLE $tablePurchaseHistory (
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnItemName TEXT NOT NULL UNIQUE,
+        $columnCategory TEXT NOT NULL,
+        $columnPurchaseCount INTEGER NOT NULL DEFAULT 1,
+        $columnLastPurchasedAt TEXT NOT NULL
+      )
     ''');
-    await db.execute('''
-      CREATE INDEX idx_food_items_category ON $tableFoodItems ($columnCategory)
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_food_items_location ON $tableFoodItems ($columnLocation)
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_food_items_expiration ON $tableFoodItems ($columnExpirationDate)
-    ''');
+
+    // 인덱스 생성
+    await db.execute(
+        'CREATE INDEX idx_purchase_history_name ON $tablePurchaseHistory ($columnItemName)');
+    await db.execute(
+        'CREATE INDEX idx_purchase_history_count ON $tablePurchaseHistory ($columnPurchaseCount DESC)');
   }
 
   /// 데이터베이스 업그레이드
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 향후 마이그레이션 로직 추가
-    // if (oldVersion < 2) { ... }
+    if (oldVersion < 2) {
+      // 버전 1 → 2: shopping_items, purchase_history 테이블 추가
+      await _createShoppingItemsTable(db);
+      await _createPurchaseHistoryTable(db);
+    }
   }
 
   /// 데이터베이스 닫기

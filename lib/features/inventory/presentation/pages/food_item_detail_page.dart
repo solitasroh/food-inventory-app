@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../shopping_list/domain/entities/shopping_enums.dart';
+import '../../../shopping_list/presentation/providers/shopping_list_provider.dart';
 import '../../domain/entities/enums.dart';
 import '../../domain/entities/food_item.dart';
 import '../providers/inventory_list_provider.dart';
@@ -357,13 +359,51 @@ class _DetailContent extends ConsumerWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        ElevatedButton.icon(
-          onPressed: () => context.go(AppRoutes.editItemPath(item.id)),
-          icon: const Icon(Icons.edit_outlined),
-          label: const Text('전체 수정'),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _addToShoppingList(context, ref),
+                icon: const Icon(Icons.add_shopping_cart),
+                label: const Text('쇼핑리스트'),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => context.go(AppRoutes.editItemPath(item.id)),
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('전체 수정'),
+              ),
+            ),
+          ],
         ),
       ],
     );
+  }
+
+  Future<void> _addToShoppingList(BuildContext context, WidgetRef ref) async {
+    await ref.read(shoppingListProvider.notifier).addItem(
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          linkedFoodItemId: item.id,
+          suggestedBy: SuggestionSource.lowStock,
+        );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name}을(를) 쇼핑리스트에 추가했습니다'),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: '보기',
+            onPressed: () => context.go('/shopping'),
+          ),
+        ),
+      );
+    }
   }
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref) {
@@ -382,17 +422,65 @@ class _DetailContent extends ConsumerWidget {
               Navigator.pop(context);
               await ref.read(inventoryListProvider.notifier).deleteItem(item.id);
               if (context.mounted) {
-                context.go(AppRoutes.home);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${item.name}이(가) 삭제되었습니다'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                // 쇼핑리스트에 추가할지 물어보기
+                _showAddToShoppingListDialog(context, ref);
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddToShoppingListDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('쇼핑리스트에 추가'),
+        content: Text('${item.name}을(를) 쇼핑리스트에 추가하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.go(AppRoutes.home);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${item.name}이(가) 삭제되었습니다'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('아니오'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              // 쇼핑리스트에 추가
+              await ref.read(shoppingListProvider.notifier).addItem(
+                    name: item.name,
+                    category: item.category,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    linkedFoodItemId: item.id,
+                    suggestedBy: SuggestionSource.expired,
+                  );
+              if (context.mounted) {
+                context.go(AppRoutes.home);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.name}이(가) 삭제되고 쇼핑리스트에 추가되었습니다'),
+                    behavior: SnackBarBehavior.floating,
+                    action: SnackBarAction(
+                      label: '보기',
+                      onPressed: () => context.go('/shopping'),
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('추가'),
           ),
         ],
       ),

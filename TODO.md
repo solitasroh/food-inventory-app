@@ -121,6 +121,31 @@
   - 검색 기능 (`searchItems`)
   - 통계 기능 (`getItemCountByCategory`, `getItemCountByLocation`)
 
+### 쇼핑리스트 기능
+- [x] **Domain Layer**
+  - `ShoppingItem` 엔티티 (freezed)
+  - `ShoppingPriority` enum (높음/보통/낮음)
+  - `SuggestionSource` enum (수동/재고부족/만료삭제/자주구매)
+  - `ShoppingListRepository` 인터페이스
+- [x] **Data Layer**
+  - DB 스키마 확장 (shopping_items, purchase_history 테이블)
+  - `ShoppingItemSqliteDataSource` - SQLite DataSource
+  - `ShoppingListRepositoryImpl` - Repository 구현
+- [x] **Presentation Layer**
+  - `ShoppingListPage` - 카테고리별 그룹핑 UI
+  - `AddShoppingItemPage` - 아이템 추가/수정
+  - `ShoppingItemTile` - 체크박스, 스와이프 삭제
+  - Riverpod Provider 구현
+- [x] **재고 ↔ 쇼핑리스트 연동**
+  - 재고 삭제 시 쇼핑리스트 추가 제안
+  - 구매 완료 시 재고 추가 제안
+  - 재고 상세에서 쇼핑리스트 추가 버튼
+- [x] **스마트 추천 시스템**
+  - 자주 구매 품목 조회
+  - 최근 구매 품목 조회
+  - 빠른 추가 UI
+  - `ShoppingRecommendationService` - 재고 부족 감지
+
 ---
 
 ## 남은 작업 (TODO)
@@ -128,7 +153,7 @@
 ### 우선순위 높음
 - [x] ~~**영구 저장소 구현** - sqflite로 메모리 저장소 교체~~ ✅ 완료
 - [x] ~~**유통기한 알림** - 로컬 푸시 알림 (flutter_local_notifications)~~ ✅ 완료
-- [ ] **쇼핑 리스트 기능** - 부족한 식재료 자동 추가, 수동 추가
+- [x] ~~**쇼핑 리스트 기능** - 부족한 식재료 자동 추가, 수동 추가~~ ✅ 완료
 - [ ] **API 키 설정** - 공공데이터포털/푸드QR API 키 발급 및 설정
 
 ### 우선순위 중간
@@ -194,9 +219,21 @@
 - `lib/core/services/product_lookup_service.dart` - 통합 제품 조회 서비스
 - `lib/core/services/notification_service.dart` - 알림 스케줄링 서비스
 - `lib/core/services/notification_settings.dart` - 알림 설정 모델
+- `lib/core/services/shopping_recommendation_service.dart` - 쇼핑 추천 서비스
 
 ### DataSource
 - `lib/features/inventory/data/datasources/food_item_sqlite_datasource.dart` - SQLite DataSource
+- `lib/features/shopping_list/data/datasources/shopping_item_sqlite_datasource.dart` - 쇼핑리스트 SQLite DataSource
+
+### 쇼핑리스트 (features/shopping_list/)
+- `domain/entities/shopping_enums.dart` - 우선순위, 추가 경로 enum
+- `domain/entities/shopping_item.dart` - 쇼핑 아이템 엔티티 (freezed)
+- `domain/repositories/shopping_list_repository.dart` - Repository 인터페이스
+- `data/repositories/shopping_list_repository_impl.dart` - Repository 구현
+- `presentation/providers/shopping_list_provider.dart` - Riverpod Provider
+- `presentation/pages/shopping_list_page.dart` - 쇼핑리스트 메인 페이지
+- `presentation/pages/add_shopping_item_page.dart` - 아이템 추가/수정 페이지
+- `presentation/widgets/shopping_item_tile.dart` - 쇼핑 아이템 타일 위젯
 
 ### 설정
 - `lib/core/config/api_config.dart` - API 키 관리

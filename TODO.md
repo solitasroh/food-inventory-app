@@ -80,12 +80,22 @@
   - 유통기한 자동 설정 (신뢰도 50% 이상)
   - 추천 정보 카드 (출처, 신뢰도 표시)
 
+### 영구 저장소 구현
+- [x] **SQLite 데이터베이스 구현**
+  - sqflite 패키지 적용
+  - `DatabaseHelper` - 싱글톤 DB 관리, 스키마 정의
+  - `FoodItemSqliteDataSource` - SQLite 기반 DataSource
+  - 인덱스 최적화 (uid, barcode, category, location, expiration_date)
+  - 실시간 스트림 지원 (`watchAllItems`)
+  - 검색 기능 (`searchItems`)
+  - 통계 기능 (`getItemCountByCategory`, `getItemCountByLocation`)
+
 ---
 
 ## 남은 작업 (TODO)
 
 ### 우선순위 높음
-- [ ] **영구 저장소 구현** - drift 또는 sqflite로 메모리 저장소 교체
+- [x] ~~**영구 저장소 구현** - sqflite로 메모리 저장소 교체~~ ✅ 완료
 - [ ] **쇼핑 리스트 기능** - 부족한 식재료 자동 추가, 수동 추가
 - [ ] **유통기한 알림** - 로컬 푸시 알림 (flutter_local_notifications)
 - [ ] **API 키 설정** - 공공데이터포털/푸드QR API 키 발급 및 설정
@@ -131,7 +141,7 @@
 | 상태관리 | Riverpod + riverpod_generator |
 | 라우팅 | go_router |
 | 데이터 클래스 | freezed + json_serializable |
-| 로컬 DB | (예정) drift 또는 sqflite |
+| 로컬 DB | sqflite |
 | 바코드 스캔 | mobile_scanner |
 | HTTP | http |
 | UI | flutter_screenutil, Material 3 |
@@ -139,6 +149,9 @@
 ---
 
 ## 새로 추가된 파일 (2024-12-24)
+
+### 데이터베이스
+- `lib/core/database/database_helper.dart` - SQLite 데이터베이스 헬퍼
 
 ### 데이터
 - `lib/core/data/food_subcategory.dart` - 서브카테고리 모델
@@ -149,6 +162,9 @@
 - `lib/core/services/food_safety_korea_service.dart` - 식품안전나라 API (I2570)
 - `lib/core/services/food_qr_service.dart` - 푸드QR API
 - `lib/core/services/product_lookup_service.dart` - 통합 제품 조회 서비스
+
+### DataSource
+- `lib/features/inventory/data/datasources/food_item_sqlite_datasource.dart` - SQLite DataSource
 
 ### 설정
 - `lib/core/config/api_config.dart` - API 키 관리

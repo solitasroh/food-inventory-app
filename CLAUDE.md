@@ -1,9 +1,11 @@
 # Food Inventory App - 식재료 관리 앱
 
 ## 📋 프로젝트 개요
+
 가정용 식재료 재고 관리, 유통기한 추적, 쇼핑 리스트 생성을 위한 Flutter 크로스플랫폼 앱
 
 ## 🛠 기술 스택
+
 - **Framework**: Flutter 3.x (Dart)
 - **State Management**: Riverpod 2.x
 - **Routing**: go_router
@@ -12,7 +14,9 @@
 - **Code Generation**: freezed, json_serializable, riverpod_generator
 
 ## 🏗 아키텍처
+
 Clean Architecture 패턴 적용:
+
 ```
 lib/
 ├── core/           # 공통 유틸, 상수, 테마, 에러 처리
@@ -25,6 +29,7 @@ lib/
 ```
 
 ## 📏 코딩 컨벤션
+
 - **Dart Style Guide** 준수
 - 파일명: `snake_case.dart`
 - 클래스: `PascalCase`
@@ -34,6 +39,7 @@ lib/
 - 한 파일에 하나의 public 클래스
 
 ## 🎨 네이밍 규칙
+
 - Page: `*_page.dart` (예: `inventory_list_page.dart`)
 - Widget: `*_widget.dart` 또는 용도별 (예: `food_item_card.dart`)
 - Provider: `*_provider.dart`
@@ -42,6 +48,7 @@ lib/
 - UseCase: `*_usecase.dart`
 
 ## 📦 주요 의존성
+
 ```yaml
 dependencies:
   flutter_riverpod: ^2.5.1
@@ -57,6 +64,7 @@ dependencies:
 ```
 
 ## 🔧 자주 사용하는 명령어
+
 ```bash
 # 코드 생성 (freezed, riverpod, isar 등)
 flutter pub run build_runner build --delete-conflicting-outputs
@@ -75,6 +83,7 @@ flutter clean && flutter pub get
 ```
 
 ## 📁 핵심 파일 위치
+
 - 앱 진입점: `lib/main.dart`
 - 라우터: `lib/core/router/app_router.dart`
 - 테마: `lib/core/theme/app_theme.dart`
@@ -83,19 +92,24 @@ flutter clean && flutter pub get
 - 쇼핑 리스트: `lib/features/shopping_list/`
 
 ## 🗃 데이터 모델
+
 ### FoodItem (식재료)
+
 - id, name, barcode, category, location
 - quantity, unit, expirationDate, purchaseDate
 - openedDate, price, imageUrl, notes
 
 ### StorageLocation (저장 위치)
+
 - refrigerator, freezer, pantry, other
 
 ### FoodCategory (카테고리)
+
 - vegetables, fruits, meat, seafood, dairy
 - grains, seasonings, processed, beverages, other
 
 ## ✅ MVP 기능 범위
+
 1. 식재료 CRUD (수동 입력)
 2. 바코드 스캔 등록
 3. 유통기한 추적 및 알림
@@ -103,6 +117,7 @@ flutter clean && flutter pub get
 5. 검색 기능
 
 ## 🚫 주의사항
+
 - Isar 스키마 변경 시 마이그레이션 필요
 - build_runner 충돌 시 `--delete-conflicting-outputs` 사용
 - iOS 시뮬레이터에서 카메라(바코드) 테스트 불가

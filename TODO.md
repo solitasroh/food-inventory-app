@@ -3,17 +3,20 @@
 ## 완료된 작업 (2024-12-21)
 
 ### 프로젝트 설정
+
 - [x] Flutter 프로젝트 생성
 - [x] Clean Architecture 폴더 구조 설정 (data/domain/presentation)
 - [x] 의존성 패키지 추가 (Riverpod, go_router, freezed, etc.)
 
 ### 핵심 기능 구현
+
 - [x] Domain 엔티티 생성 (FoodItem, StorageLocation, FoodCategory)
 - [x] Freezed를 사용한 불변 데이터 클래스 구현
 - [x] Material 3 테마 설정 (라이트/다크 모드)
 - [x] go_router 라우팅 설정 (하단 네비게이션 바 포함)
 
 ### 재고 관리 기능
+
 - [x] 식재료 목록 페이지 (InventoryListPage)
   - 필터링 (저장 위치, 카테고리)
   - 검색 기능
@@ -28,31 +31,37 @@
   - 변경 감지 및 확인 다이얼로그
 
 ### 바코드 스캔 기능
+
 - [x] mobile_scanner 패키지 통합
 - [x] 바코드 스캐너 페이지 (BarcodeScannerPage)
 - [x] Open Food Facts API 연동
 - [x] 스캔 결과로 제품 정보 자동 입력
 
 ### 데이터 레이어
+
 - [x] Repository 패턴 구현
 - [x] DataSource 추상화
 - [x] 메모리 기반 임시 저장소 (FoodItemMemoryDataSource)
 
 ### 상태 관리
+
 - [x] Riverpod Provider 설정
 - [x] AsyncNotifier를 사용한 비동기 상태 관리
 - [x] 필터/검색 Provider 분리
 
 ### 플랫폼 설정
+
 - [x] Android 카메라 권한 설정
 - [x] iOS 카메라 권한 설정 (Info.plist)
 - [x] iOS 최소 배포 버전 15.5로 업데이트
 
 ### 테스트
+
 - [x] Android 에뮬레이터 테스트
 - [x] iOS 시뮬레이터 테스트
 
 ### 기타
+
 - [x] GitHub 레포지토리 생성 및 푸시
 
 ---
@@ -168,6 +177,7 @@
 - [ ] **사용자 히스토리 학습** - 반복 구매 제품 유통기한 패턴 학습
 
 ### 우선순위 낮음
+
 - [ ] **다국어 지원** (i18n) - 영어, 한국어
 - [ ] **앱 아이콘 및 스플래시 스크린** 디자인
 - [ ] **위젯** - iOS/Android 홈 화면 위젯
@@ -175,12 +185,14 @@
 - [ ] **OCR 기능** - 유통기한 라벨 자동 인식 (google_mlkit_text_recognition)
 
 ### 코드 품질
+
 - [ ] **단위 테스트** 작성 (UseCase, Repository)
 - [ ] **위젯 테스트** 작성
 - [ ] **통합 테스트** 작성
 - [ ] **코드 리팩토링** - 중복 코드 제거, 상수 분리
 
 ### 배포 준비
+
 - [ ] **앱 서명 설정** (Android keystore, iOS certificates)
 - [ ] **Play Store 등록** 준비
 - [ ] **App Store 등록** 준비
